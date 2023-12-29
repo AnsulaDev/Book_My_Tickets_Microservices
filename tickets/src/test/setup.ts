@@ -1,28 +1,29 @@
-import {MongoMemoryServer} from 'mongodb-memory-server';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
-import  request from 'supertest';
+import request from 'supertest';
 import { app } from '../app';
 import jwt from 'jsonwebtoken';
+
 declare global {
     var signin: () => string[];
 }
 
 let mongo: any;
+beforeAll(async () => {
+    process.env.JWT_KEY = 'asdfasdf';
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-beforeAll( async () => {
-    process.env.JWT_KEY = 'asdfadf';
-    mongo = await MongoMemoryServer.create();
+    const mongo = await MongoMemoryServer.create();
     const mongoUri = mongo.getUri();
 
     await mongoose.connect(mongoUri, {});
 });
 
-beforeEach( async ()=> {
+beforeEach(async () => {
     const collections = await mongoose.connection.db.collections();
 
-    for(let collection of collections){
+    for (let collection of collections) {
         await collection.deleteMany({});
-
     }
 });
 
@@ -33,34 +34,25 @@ afterAll(async () => {
     await mongoose.connection.close();
 });
 
-global.signin = () =>{
-
-    const payload ={
-        id:'1lk24j124l',
-        email:'test@test.com'
+global.signin = () => {
+    // Build a JWT payload.  { id, email }
+    const payload = {
+        id: new mongoose.Types.ObjectId().toHexString(),
+        email: 'test@test.com',
     };
 
+    // Create the JWT!
     const token = jwt.sign(payload, process.env.JWT_KEY!);
-    const session = {jwt: token};
 
+    // Build session Object. { jwt: MY_JWT }
+    const session = { jwt: token };
+
+    // Turn that session into JSON
     const sessionJSON = JSON.stringify(session);
 
+    // Take JSON and encode it as base64
     const base64 = Buffer.from(sessionJSON).toString('base64');
 
-
-    // const email = 'testing@gmail.com';
-    // const password = 'password';
-
-    // const response = await request(app)
-    //     .post('/api/users/signup')
-    //     .send({
-    //         email,
-    //         password
-    //     })
-    //     .expect(201)
-    
-    // const cookie = response.get('Set-Cookie');
-
-    // return cookie;
-    return  [`session=${base64}`];
-}
+    // return a string thats the cookie with the encoded data
+    return [`session=${base64}`];
+};
