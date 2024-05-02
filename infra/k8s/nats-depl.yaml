@@ -15,7 +15,7 @@ spec:
       containers:
         - name: nats
           image: nats-streaming:0.17.0
-          args: 
+          args:
             [
               '-p',
               '4222',
@@ -29,7 +29,7 @@ spec:
               '2',
               '-SD',
               '-cid',
-              'ticketing'
+              'ticketing',
             ]
 ---
 apiVersion: v1
